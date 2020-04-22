@@ -1,6 +1,6 @@
 import dash
 import socket
-import dash_auth
+#import dash_auth
 import dash_html_components as html
 import dash_core_components as dcc
 from pathlib import Path
@@ -21,7 +21,7 @@ portid = 8080
 app = dash.Dash(__name__)
 server = app.server
 path = Path()
-auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
+#auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 assets = path / 'assets'
 
 
