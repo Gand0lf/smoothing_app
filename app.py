@@ -134,4 +134,4 @@ def generateNstore(n_clicks):
 if __name__ == '__main__':
     print("hostname:" + str(ip) + str(portid))
     app.title = "Smoothing Study"
-    app.run_server(debug=False, host=ip, port=portid)
+    app.run_server(debug=False)#, host=ip, port=portid)
