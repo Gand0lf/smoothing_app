@@ -7,8 +7,8 @@ from pathlib import Path
 from dash.dependencies import Input, Output, State
 import numpy as np
 import json
-import pandas as pd
-import sqlite3
+#import pandas as pd
+#import sqlite3
 
 from interpolation.utilfcts import runall, createdata
 
