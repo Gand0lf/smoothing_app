@@ -19,6 +19,7 @@ ip = socket.gethostbyname(socket.gethostname())
 portid = 8080
 
 app = dash.Dash(__name__)
+server = app.server
 path = Path()
 auth = dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
 assets = path / 'assets'
