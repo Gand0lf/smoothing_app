@@ -1,6 +1,6 @@
 #from typing import List, Any
 
-from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
+from scipy.interpolate import RBFInterpolator
 from sklearn.linear_model import LinearRegression
 #import plotly.express as px
 import numpy as np
@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 #import math
 #import cufflinks as cf
 from pygam import LinearGAM, s, f, te
-import dash_core_components as dcc
+from dash import dcc
 np.random.seed(seed=8080)
 
 def createdata():
@@ -62,9 +62,8 @@ def runall(flags: list, x, y, z,lambd=0.6,nsplin=20):
     tiy = np.append(y, y[-1] + y[1:11])  # 10 more steps for extrapolation
 
     XI, YI = np.meshgrid(tix, tiy)
-    # fit in sample
-    inter = Rbf(x_mesh, y_mesh, z_mesh, function="thin_plate", smooth=0)
-    ZI = inter(XI, YI)  # prediction step with
+    rbf = RBFInterpolator(np.column_stack([x_mesh, y_mesh]), z_mesh, kernel="thin_plate", smoothing=0)
+    ZI = rbf(np.column_stack([XI.flatten(), YI.flatten()])).reshape(XI.shape)
     def sumSQloss(y, yhat):
         return np.sum((y - yhat) ** 2)
 
