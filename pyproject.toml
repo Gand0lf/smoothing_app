@@ -5,7 +5,7 @@ description = "Visualizing and comparing smoothing/interpolation methods"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "dash>=3.0.0",
+    "dash>=3.0.0,<4.0.0",
     "flask>=3.0.0",
     "numpy>=2.0.0",
     "scipy>=1.15.0",
