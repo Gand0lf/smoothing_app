@@ -1,17 +1,22 @@
-#from typing import List, Any
+# from typing import List, Any
 
 from scipy.interpolate import RBFInterpolator
 from sklearn.linear_model import LinearRegression
-#import plotly.express as px
+
+# import plotly.express as px
 import numpy as np
-#import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.graph_objects as go
-#import math
-#import cufflinks as cf
+
+# import math
+# import cufflinks as cf
 from pygam import LinearGAM, s, f, te
 from dash import dcc
+
 np.random.seed(seed=8080)
+
 
 def createdata():
     x = np.linspace(0.0, 30.0, num=10)
@@ -20,7 +25,7 @@ def createdata():
     def morph(c, m, x):
         _sqrt = np.sqrt(x)
         _new = c + m * _sqrt
-        return (_new)
+        return _new
 
     # trend=list(map(math.sin,y));trend
 
@@ -40,8 +45,8 @@ def createdata():
     return x, y, z
 
 
-def runall(flags: list, x, y, z,lambd=0.6,nsplin=20):
-    x,y,z=np.array(x),np.array(y),np.array(z)
+def runall(flags: list, x, y, z, lambd=0.6, nsplin=20):
+    x, y, z = np.array(x), np.array(y), np.array(z)
 
     _shapetomesh = pd.DataFrame(z, columns=x, index=y)
 
@@ -62,8 +67,14 @@ def runall(flags: list, x, y, z,lambd=0.6,nsplin=20):
     tiy = np.append(y, y[-1] + y[1:11])  # 10 more steps for extrapolation
 
     XI, YI = np.meshgrid(tix, tiy)
-    rbf = RBFInterpolator(np.column_stack([x_mesh, y_mesh]), z_mesh, kernel="thin_plate", smoothing=0)
+    rbf = RBFInterpolator(
+        np.column_stack([x_mesh, y_mesh]),
+        z_mesh,
+        kernel="thin_plate_spline",
+        smoothing=0,
+    )
     ZI = rbf(np.column_stack([XI.flatten(), YI.flatten()])).reshape(XI.shape)
+
     def sumSQloss(y, yhat):
         return np.sum((y - yhat) ** 2)
 
@@ -78,39 +89,64 @@ def runall(flags: list, x, y, z,lambd=0.6,nsplin=20):
 
     inter = np.array([XI.flatten(), YI.flatten()]).T
 
-    gam = LinearGAM(s(0, n_splines=s_num, spline_order=s_order, lam=lam) + s(1, n_splines=s_num, spline_order=s_order,
-                                                                             lam=lam)).fit(_X,z_mesh)  # in sample fitting
+    gam = LinearGAM(
+        s(0, n_splines=s_num, spline_order=s_order, lam=lam)
+        + s(1, n_splines=s_num, spline_order=s_order, lam=lam)
+    ).fit(_X, z_mesh)  # in sample fitting
     # gam = LinearGAM(te(0,1,n_splines=100,lam=lam)).fit(_X, z_mesh) #in sample fitting
     zHATgam = gam.predict(_X)
     zHatgam_pred = gam.predict(inter).reshape(60, 10)
 
     loss = sumSQloss(storage.T[2], ZI[:50].T.flatten())
 
-    _tps = go.Surface(x=tix, y=tiy, z=ZI, opacity=0.9,coloraxis="coloraxis",legendgroup="group"),
-    _gam = go.Surface(x=tix, y=tiy, z=zHatgam_pred, opacity=0.9, coloraxis="coloraxis",legendgroup="group"),
-    _points = go.Scatter3d(x=storage.T[0], y=storage.T[1], z=storage.T[2],
-                           legendgroup="group1",
-                           mode='markers',
-                           marker=dict(
-                               symbol="x",
-                               size=2,
-                               color="black",
-                               # color=storage.T[2],                # set color to an array/list of desired values
-                               # colorscale='Viridis',   # choose a colorscale
-                               opacity=1
-                           ),
-                           ),
-    _linplane = go.Scatter3d(x=storage.T[0], y=storage.T[1], z=zHATlin,
-                             legendgroup="group1",
-                             mode='markers',
-                             marker=dict(
-                                 size=2.5,
-                                 color="red",
-                                 # color=storage.T[2],                # set color to an array/list of desired values
-                                 # colorscale='Viridis',   # choose a colorscale
-                                 opacity=1
-                             )
-                             ),
+    _tps = (
+        go.Surface(
+            x=tix, y=tiy, z=ZI, opacity=0.9, coloraxis="coloraxis", legendgroup="group"
+        ),
+    )
+    _gam = (
+        go.Surface(
+            x=tix,
+            y=tiy,
+            z=zHatgam_pred,
+            opacity=0.9,
+            coloraxis="coloraxis",
+            legendgroup="group",
+        ),
+    )
+    _points = (
+        go.Scatter3d(
+            x=storage.T[0],
+            y=storage.T[1],
+            z=storage.T[2],
+            legendgroup="group1",
+            mode="markers",
+            marker=dict(
+                symbol="x",
+                size=2,
+                color="black",
+                # color=storage.T[2],                # set color to an array/list of desired values
+                # colorscale='Viridis',   # choose a colorscale
+                opacity=1,
+            ),
+        ),
+    )
+    _linplane = (
+        go.Scatter3d(
+            x=storage.T[0],
+            y=storage.T[1],
+            z=zHATlin,
+            legendgroup="group1",
+            mode="markers",
+            marker=dict(
+                size=2.5,
+                color="red",
+                # color=storage.T[2],                # set color to an array/list of desired values
+                # colorscale='Viridis',   # choose a colorscale
+                opacity=1,
+            ),
+        ),
+    )
     selection = []
     if "tps" in flags:
         selection.append(_tps[0])
@@ -122,26 +158,26 @@ def runall(flags: list, x, y, z,lambd=0.6,nsplin=20):
         selection.append(_points[0])
     fig_i = go.Figure(
         data=selection,
-        #layout=dict(scene=dict(camera={'up': UPS[0], 'center': CENTERS[0], 'eye': EYES[0]})),
-        #https://plotly.com/python/reference/#layout-scene-camera
+        # layout=dict(scene=dict(camera={'up': UPS[0], 'center': CENTERS[0], 'eye': EYES[0]})),
+        # https://plotly.com/python/reference/#layout-scene-camera
     )
 
     fig_i.update_layout(
         scene=dict(
-            xaxis_title='X Maturities',
-            yaxis_title='Y Time',
-            zaxis_title='Z Yield'),
+            xaxis_title="X Maturities", yaxis_title="Y Time", zaxis_title="Z Yield"
+        ),
         title=f"Simulated data",
         width=900,
         height=600,
         margin=dict(r=20, l=10, b=10, t=10),
-        scene_aspectmode='manual', scene_aspectratio=dict(x=1, y=2, z=1),
+        scene_aspectmode="manual",
+        scene_aspectratio=dict(x=1, y=2, z=1),
         showlegend=True,
-        #coloraxis_showscale=False,
+        # coloraxis_showscale=False,
     )
     fig_i.layout.title.y = 0.95
     fig_i.layout.coloraxis.colorscale = "Viridis"
-    plot = dcc.Graph(figure=fig_i, style={'width': '100%', 'height': '100%'}, id='plot')
+    plot = dcc.Graph(figure=fig_i, style={"width": "100%", "height": "100%"}, id="plot")
     return plot
 
 
