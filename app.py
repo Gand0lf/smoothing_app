@@ -1,10 +1,6 @@
 import dash
-import socket
-#import dash_auth
-import dash_html_components as html
-import dash_core_components as dcc
+from dash import html, dcc, Input, Output, State
 from pathlib import Path
-from dash.dependencies import Input, Output, State
 import numpy as np
 import json
 #import pandas as pd
@@ -14,9 +10,6 @@ from interpolation.utilfcts import runall, createdata
 
 np.random.seed(seed=8080)
 VALID_USERNAME_PASSWORD_PAIRS = {'testuser': '123'}
-
-ip = socket.gethostbyname(socket.gethostname())
-portid = 8080
 
 app = dash.Dash(__name__)
 server = app.server
@@ -132,6 +125,5 @@ def generateNstore(n_clicks):
 
 
 if __name__ == '__main__':
-    print("hostname:" + str(ip) + str(portid))
     app.title = "Smoothing Study"
-    app.run_server(debug=False)#, host=ip, port=portid)
+    app.run(debug=True)
