@@ -4,21 +4,21 @@ This document provides essential information for AI coding agents working in thi
 
 ## Project Overview
 
-A Dash/Flask web application for visualizing and comparing smoothing/interpolation methods (Thin Plate Splines, GAM, Linear Regression) on simulated data. Deployed on Heroku.
+A Dash/Flask web application for visualizing and comparing smoothing/interpolation methods (Thin Plate Splines, GAM, Linear Regression) on simulated data. Local development only.
 
 ## Build/Lint/Test Commands
 
 ### Running the Application
 
 ```bash
-# Development server
-python app.py
-
-# Production (via gunicorn - used by Heroku)
-gunicorn app:server
-
 # Install dependencies
-pip install -r requirements.txt
+uv sync
+
+# Development server (with hot reload)
+uv run python app.py
+
+# Add a new dependency
+uv add <package>
 ```
 
 ### Testing
@@ -59,8 +59,8 @@ black . --line-length=120
 ```
 smoothing_app/
 ├── app.py                 # Main Dash application entry point
-├── Procfile               # Heroku deployment config
-├── requirements.txt       # Python dependencies
+├── pyproject.toml         # Project config and dependencies (uv)
+├── .python-version        # Python version pin (3.12)
 ├── assets/                # Static assets (CSS, favicon, storage)
 │   ├── base-styles.css    # Skeleton CSS framework
 │   └── custom-styles.css  # Custom application styles
@@ -76,18 +76,15 @@ smoothing_app/
 
 ```python
 # Standard library first
-import socket
 from pathlib import Path
 
 # Third-party libraries second (alphabetically grouped)
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
 import numpy as np
 import pandas as pd
-from dash.dependencies import Input, Output, State
+from dash import html, dcc, Input, Output, State
 from pygam import LinearGAM, s, f, te
-from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
+from scipy.interpolate import RBFInterpolator
 from sklearn.linear_model import LinearRegression
 
 # Local modules last
@@ -165,10 +162,9 @@ def callback_function(input_value, state_value):
 ### Dash Application Structure
 
 1. Initialize app: `app = dash.Dash(__name__)`
-2. Expose Flask server: `server = app.server`
-3. Define layout with `html.Div` containers
-4. Register callbacks with decorators
-5. Run with `app.run_server()` for development
+2. Define layout with `html.Div` containers
+3. Register callbacks with decorators
+4. Run with `app.run(debug=True)` for development
 
 ### NumPy/SciPy Interpolation Pattern
 
@@ -176,11 +172,16 @@ def callback_function(input_value, state_value):
 # Create meshgrid for interpolation
 XI, YI = np.meshgrid(tix, tiy)
 
-# Fit interpolator
-inter = Rbf(x_mesh, y_mesh, z_mesh, function="thin_plate", smooth=0)
+# Fit interpolator (RBFInterpolator replaces deprecated Rbf)
+rbf = RBFInterpolator(
+    np.column_stack([x_mesh, y_mesh]), 
+    z_mesh, 
+    kernel="thin_plate", 
+    smoothing=0
+)
 
 # Predict on grid
-ZI = inter(XI, YI)
+ZI = rbf(np.column_stack([XI.flatten(), YI.flatten()])).reshape(XI.shape)
 ```
 
 ### Plotly Graph Pattern
@@ -200,16 +201,10 @@ return dcc.Graph(figure=fig, id='plot-id')
 
 Key packages and their purposes:
 
-- **dash**: Web framework for the UI
+- **dash**: Web framework for the UI (v3.x)
 - **plotly**: Interactive visualizations
-- **numpy**: Numerical operations
-- **scipy**: Interpolation algorithms (Rbf, splines)
+- **numpy**: Numerical operations (v2.x)
+- **scipy**: Interpolation algorithms (RBFInterpolator)
 - **scikit-learn**: Linear regression fitting
 - **pygam**: Generalized Additive Models
-- **gunicorn**: WSGI server for production
-
-## Deployment
-
-- Platform: Heroku
-- Config: `Procfile` contains `web: gunicorn app:server`
-- The `server` variable in `app.py` is the Flask app exposed for gunicorn
+- **flask**: WSGI framework (Dash dependency)
